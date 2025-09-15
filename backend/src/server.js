@@ -13,6 +13,11 @@ app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 
+// Friendly root for platform health checks (e.g., Render "Cannot GET /")
+app.get('/', (_req, res) => {
+	res.type('text/plain').send('Fiesta Finder API is running. Try GET /api/health');
+});
+
 app.get('/api/health', (_req, res) => {
 	res.json({ status: 'ok' });
 });
