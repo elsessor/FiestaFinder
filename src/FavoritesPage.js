@@ -1,13 +1,14 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { FavoritesContext } from './App';
-import { festivals } from './festival';
+import { useAdmin } from './AdminContext';
 import FestivalCard from './FestivalCard';
 import { Heart, ArrowRight } from 'lucide-react';
 
 const FavoritesPage = () => {
-  const { favorites, handleFavorite } = useContext(FavoritesContext);
-  
+  const { favorites } = useContext(FavoritesContext);
+  const { festivals } = useAdmin();
+
   const favoriteFestivals = festivals.filter(festival => favorites.has(festival.id));
 
   return (

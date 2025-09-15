@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Heart, MapPin, Mail, ExternalLink, Facebook, Instagram } from 'lucide-react';
 
 const Footer = () => {
@@ -28,9 +29,9 @@ const Footer = () => {
           <div>
             <h4 className="text-sm font-semibold text-gray-900 mb-4">Quick Links</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Home</a></li>
-              <li><a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">My Favorites</a></li>
-              <li><a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">About Us</a></li>
+              <li><Link to="/" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Home</Link></li>
+              <li><Link to="/favorites" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">My Favorites</Link></li>
+              <li><Link to="/about" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">About Us</Link></li>
             </ul>
           </div>
 
@@ -40,19 +41,19 @@ const Footer = () => {
             <ul className="space-y-2">
               <li className="flex items-center">
                 <span className="mr-2">⛪</span>
-                <a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Religious Festivals</a>
+                <Link to="/" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Religious Festivals</Link>
               </li>
               <li className="flex items-center">
                 <span className="mr-2">🎨</span>
-                <a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Cultural Events</a>
+                <Link to="/" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Cultural Events</Link>
               </li>
               <li className="flex items-center">
                 <span className="mr-2">🏛️</span>
-                <a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Historical Celebrations</a>
+                <Link to="/" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Historical Celebrations</Link>
               </li>
               <li className="flex items-center">
                 <span className="mr-2">🌿</span>
-                <a href="#" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Nature Festivals</a>
+                <Link to="/" className="text-sm text-gray-600 hover:text-pink-600 transition-colors">Nature Festivals</Link>
               </li>
             </ul>
           </div>
@@ -73,10 +74,10 @@ const Footer = () => {
               </div>
               <div className="flex items-center text-sm text-gray-600">
                 <ExternalLink className="w-4 h-4 mr-2" />
-                <a href="#" className="hover:text-pink-600 transition-colors flex items-center">
+                <Link to="/map" className="hover:text-pink-600 transition-colors flex items-center">
                   View on Map
                   <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
+                </Link>
               </div>
             </div>
 
@@ -84,21 +85,21 @@ const Footer = () => {
             <div className="mt-6">
               <p className="text-sm font-medium text-gray-900 mb-3">Follow Us</p>
               <div className="flex space-x-3">
-                <a href="#" className="p-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
+                <button type="button" disabled title="Facebook page coming soon" className="p-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors">
                   <Facebook className="w-4 h-4" />
-                </a>
-                <a href="#" className="p-2 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg hover:from-pink-600 hover:to-orange-600 transition-colors">
+                </button>
+                <button type="button" disabled title="Instagram page coming soon" className="p-2 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-lg hover:from-pink-600 hover:to-orange-600 transition-colors">
                   <Instagram className="w-4 h-4" />
-                </a>
+                </button>
               </div>
             </div>
 
             {/* Discover Festivals Link */}
             <div className="mt-6">
-              <a href="#" className="inline-flex items-center text-sm text-pink-600 hover:text-pink-700 transition-colors">
+              <Link to="/" className="inline-flex items-center text-sm text-pink-600 hover:text-pink-700 transition-colors">
                 Discover Festivals
                 <ExternalLink className="w-3 h-3 ml-1" />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -108,9 +109,9 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-sm text-gray-500">© 2025 Agad Co. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Privacy Policy</a>
-              <a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Terms of Service</a>
-              <a href="#" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Support</a>
+              <Link to="/about" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Privacy Policy</Link>
+              <Link to="/about" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Terms of Service</Link>
+              <Link to="/about" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">Support</Link>
             </div>
           </div>
         </div>

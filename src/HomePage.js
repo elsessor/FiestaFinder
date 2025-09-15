@@ -2,13 +2,19 @@ import React, { useState, useMemo } from 'react';
 import HeroSection from './HeroSection';
 import FilterSection from './FilterSection';
 import FestivalCard from './FestivalCard';
-import { festivals, featuredFestivals } from './festival';
+import { useAdmin } from './AdminContext';
 import { Star } from 'lucide-react';
 
 const HomePage = () => {
+  const { festivals } = useAdmin();
   const [selectedCategory, setSelectedCategory] = useState('All Festivals');
   const [selectedMonth, setSelectedMonth] = useState('All Year');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Get featured festivals dynamically
+  const featuredFestivals = festivals.filter(f =>
+    ['penafrancia-festival', 'kaogma-festival', 'cimarrones-festival', 'boa-boahan-festival', 'karanowan-fish-tival', 'tinagba-festival'].includes(f.id)
+  );
 
   const filteredFestivals = useMemo(() => {
     return festivals.filter(festival => {
@@ -20,7 +26,7 @@ const HomePage = () => {
       
       return matchesCategory && matchesMonth && matchesSearch;
     });
-  }, [selectedCategory, selectedMonth, searchQuery]);
+  }, [festivals, selectedCategory, selectedMonth, searchQuery]);
 
 
   return (

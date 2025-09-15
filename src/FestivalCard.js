@@ -25,16 +25,21 @@ const FestivalCard = ({ festival }) => {
 
   return (
     <div className="overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm hover-lift hover-glow transition-all duration-300">
-      {/* Card Header with Gradient Background */}
-      <div className="h-32 bg-gradient-to-br from-purple-200 via-blue-200 to-green-200 relative flex items-center justify-center">
-        <div className="text-4xl animate-bounce-gentle">{categoryIcon}</div>
+      {/* Card Header with Image or Gradient */}
+      <div className="h-32 relative flex items-center justify-center">
+        {festival.imageUrls && festival.imageUrls.length > 0 ? (
+          <img src={festival.imageUrls[0]} alt={festival.name} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-200 via-blue-200 to-green-200" />
+        )}
+        <div className="relative z-10 text-4xl animate-bounce-gentle">{categoryIcon}</div>
         <button
           onClick={() => handleFavorite(festival.id)}
-          className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-all hover-scale"
+          className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-all hover-scale z-10"
         >
           <Heart className={`w-4 h-4 transition-all ${isFavorite ? 'fill-red-500 text-red-500 animate-pulse-slow' : 'text-gray-600 hover:text-red-400'}`} />
         </button>
-        <span className={`absolute bottom-3 right-3 px-2.5 py-0.5 text-xs font-semibold rounded-full ${categoryColor} transition-all hover-scale`}>
+        <span className={`absolute bottom-3 right-3 px-2.5 py-0.5 text-xs font-semibold rounded-full ${categoryColor} transition-all hover-scale z-10`}>
           {festival.category.toLowerCase()}
         </span>
       </div>
