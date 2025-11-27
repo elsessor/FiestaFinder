@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import HeroSection from './HeroSection';
 import FilterSection from './FilterSection';
 import FestivalCard from './FestivalCard';
@@ -18,7 +19,6 @@ const HomePage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch all from backend; we will apply filters on the client so button logic is always consistent
         const data = await FestivalsAPI.list();
         if (!ignore) setRemoteFestivals(data);
       } catch (_) {
@@ -30,6 +30,18 @@ const HomePage = () => {
     fetchData();
     return () => { ignore = true; };
   }, []);
+
+  // Read `search` query param from URL so header searches navigate to HomePage correctly
+  const location = useLocation();
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const q = params.get('search') || '';
+      setSearchQuery(q);
+    } catch (e) {
+      // ignore
+    }
+  }, [location.search]);
 
   const useLocalFallback = Array.isArray(remoteFestivals) && remoteFestivals.length === 0 && selectedCategory === 'All Festivals' && selectedMonth === 'All Year' && !searchQuery;
   const remote = Array.isArray(remoteFestivals) ? remoteFestivals : [];

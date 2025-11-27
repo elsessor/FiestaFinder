@@ -19,6 +19,14 @@ function App() {
   const [favorites, setFavorites] = useState(new Set());
 
   const handleFavorite = (festivalId) => {
+    // Only allow favoriting if a user is signed in
+    if (!user) {
+      // Redirect to sign-in page and show a simple alert
+      try { window.alert('Please sign in to add favorites.'); } catch (e) {}
+      try { window.location.href = '/signin'; } catch (e) {}
+      return;
+    }
+
     setFavorites(prev => {
       const newFavorites = new Set(prev);
       if (newFavorites.has(festivalId)) {

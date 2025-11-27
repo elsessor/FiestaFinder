@@ -11,9 +11,15 @@ const MapPage = () => {
   const filteredFestivals = festivals.filter(festival => {
     const matchesCategory = selectedCategory === 'All' || festival.category === selectedCategory;
     const matchesMonth = selectedMonth === 'All' || festival.month === selectedMonth;
-    const matchesSearch = festival.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         festival.location.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
+    const q = (searchQuery || '').trim().toLowerCase();
+    // If query is empty, treat as match. Otherwise check name, location, description, and category.
+    const matchesSearch = q === '' ||
+      (festival.name || '').toLowerCase().includes(q) ||
+      (festival.location || '').toLowerCase().includes(q) ||
+      (festival.description || '').toLowerCase().includes(q) ||
+      (festival.category || '').toLowerCase().includes(q);
+
     return matchesCategory && matchesMonth && matchesSearch;
   });
 
