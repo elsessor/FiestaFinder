@@ -1,195 +1,115 @@
-import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './App';
-import { Eye, EyeOff, Mail, Lock, User, ArrowRight } from 'lucide-react';
-import { AuthAPI } from './api';
-import { useToast } from './ToastContext';
+import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
 
-const SignInPage = () => {
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    name: '',
-    confirmPassword: ''
-  });
-  const [loading, setLoading] = useState(false);
-  
-  const { setUser } = useContext(AuthContext);
+function SignInPage() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { setUser } = useContext(AuthContext);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleInputChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      let resp;
-      if (isSignUp) {
-        resp = await AuthAPI.register({ name: formData.name, email: formData.email, password: formData.password });
-      } else {
-        resp = await AuthAPI.login({ email: formData.email, password: formData.password });
+    // Derive a friendly display name from the email local-part (before @)
+    const deriveName = (em) => {
+      try {
+        const local = (em || '').split('@')[0] || 'User';
+        // replace dots/underscores/dashes with spaces and capitalize words
+        return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      } catch (err) {
+        return 'User';
       }
-      if (resp?.token) {
-        localStorage.setItem('token', resp.token);
-      }
-      const userData = resp?.user || {
-        id: Date.now(),
-        name: isSignUp ? formData.name : 'Festival Lover',
-        email: formData.email,
-        avatar: '👤'
-      };
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      toast({ type: 'success', message: isSignUp ? 'Account created! Signed in.' : 'Signed in successfully.' });
-      navigate('/');
-    } catch (err) {
-      toast({ type: 'error', message: err.message || 'Sign in failed. Please try again.' });
-    } finally {
-      setLoading(false);
-    }
+    };
+
+    const displayName = deriveName(email);
+    const signedInUser = { name: displayName, email, avatar: displayName.charAt(0).toUpperCase() || 'U' };
+    setUser(signedInUser);
+    localStorage.setItem('user', JSON.stringify(signedInUser));
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center py-12">
-      <div className="max-w-md w-full mx-4">
-        {/* Header */}
-        <div className="text-center mb-8 animate-fade-in">
-          <Link to="/" className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-pink-500 to-orange-500 rounded-2xl mb-4 hover-scale">
-            <span className="text-white text-2xl">🏛️</span>
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {isSignUp ? 'Join Fiesta Finder' : 'Welcome Back'}
-          </h1>
-          <p className="text-gray-600">
-            {isSignUp ? 'Start discovering amazing festivals!' : 'Continue your festival journey'}
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="mx-auto h-20 w-20 bg-gradient-to-br from-pink-500 to-orange-500 rounded-2xl flex items-center justify-center mb-6">
+            <span className="text-3xl">🏛️</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="mt-2 text-gray-600">Continue your festival journey</p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 animate-slide-up hover-glow">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all"
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Mail className="h-5 w-5 text-gray-400" />
               </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all"
-                  placeholder="Enter your email"
-                  required
-                />
-              </div>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="Enter your email"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+              />
             </div>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all"
-                  placeholder="Enter your password"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400" />
               </div>
-            </div>
-
-            {isSignUp && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all"
-                    placeholder="Confirm your password"
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-pink-500 to-orange-500 text-white py-3 px-4 rounded-lg hover:from-pink-600 hover:to-orange-600 transition-all hover-scale flex items-center justify-center font-medium"
-            >
-              {loading ? (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              ) : (
-                <>
-                  {isSignUp ? 'Create Account' : 'Sign In'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Toggle between Sign In and Sign Up */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              {isSignUp ? 'Already have an account?' : "Don't have an account?"}
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+                className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+              />
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="ml-2 text-pink-600 hover:text-pink-700 font-medium transition-colors"
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
-                {isSignUp ? 'Sign In' : 'Sign Up'}
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                ) : (
+                  <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                )}
               </button>
-            </p>
+            </div>
           </div>
 
-          {/* Demo Account */}
-          <div className="mt-6 p-4 bg-pink-50 rounded-lg">
-            <p className="text-sm text-pink-800 text-center">
-              <span className="font-medium">Demo:</span> Use any email and password to sign in!
-            </p>
+          <button
+            type="submit"
+            className="w-full py-3 px-4 text-white rounded-lg bg-gradient-to-r from-pink-500 to-orange-500 hover:from-pink-600 hover:to-orange-600 transition-all font-medium flex items-center justify-center"
+          >
+            <LogIn className="h-5 w-5 mr-2" />
+            Sign In
+          </button>
+
+          <div className="text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <a href="/signup" className="text-pink-600 hover:text-pink-700">Sign Up</a>
           </div>
-        </div>
+          <div className="text-center text-xs text-gray-500 mt-1">
+            Are you an admin?{' '}
+            <a href="/admin/login" className="text-pink-600 hover:text-pink-700">Admin login</a>
+          </div>
+
+
+        </form>
       </div>
     </div>
   );
-};
+}
 
 export default SignInPage;
+

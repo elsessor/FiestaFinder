@@ -6,6 +6,7 @@ import FestivalCard from './FestivalCard';
 import { festivals as localFestivals, featuredFestivals as localFeatured } from './festival';
 import { Star } from 'lucide-react';
 import { FestivalsAPI } from './api';
+import { useAdmin } from './AdminContext';
 
 const HomePage = () => {
   const [selectedCategory, setSelectedCategory] = useState('All Festivals');
@@ -13,6 +14,9 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [remoteFestivals, setRemoteFestivals] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { festivals: adminFestivals } = useAdmin();
+
+
 
   useEffect(() => {
     let ignore = false;
@@ -45,7 +49,8 @@ const HomePage = () => {
 
   const useLocalFallback = Array.isArray(remoteFestivals) && remoteFestivals.length === 0 && selectedCategory === 'All Festivals' && selectedMonth === 'All Year' && !searchQuery;
   const remote = Array.isArray(remoteFestivals) ? remoteFestivals : [];
-  // Merge local seed data with remote DB items, de-duplicated by slug/_id/name so newly added festivals show alongside local ones
+  // Merge local seed data, admin-managed festivals, and remote DB items,
+  // de-duplicated by slug/_id/name so newly added festivals show alongside local ones
   const mergedFestivals = (() => {
     const map = new Map();
     const add = (f) => {
@@ -53,6 +58,8 @@ const HomePage = () => {
       if (!map.has(key)) map.set(key, f);
     };
     localFestivals.forEach(add);
+    // include admin-managed festivals (stored in local state / localStorage)
+    Array.isArray(adminFestivals) && adminFestivals.forEach(add);
     remote.forEach(add);
     return Array.from(map.values());
   })();

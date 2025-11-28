@@ -4,9 +4,12 @@ import { FavoritesContext } from './App';
 import { festivals } from './festival';
 import FestivalCard from './FestivalCard';
 import { Heart, ArrowRight } from 'lucide-react';
+import { useAdmin } from './AdminContext';
+
 
 const FavoritesPage = () => {
-  const { favorites, handleFavorite } = useContext(FavoritesContext);
+  const { favorites } = useContext(FavoritesContext);
+  const { festivals } = useAdmin();
   
   const favoriteFestivals = festivals.filter(festival => favorites.has(festival.id));
 
