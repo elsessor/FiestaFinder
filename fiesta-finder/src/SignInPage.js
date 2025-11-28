@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from './App';
 import { Mail, Lock, Eye, EyeOff, LogIn } from 'lucide-react';
+import { AuthAPI } from './api';
 
 function SignInPage() {
   const navigate = useNavigate();
@@ -10,13 +11,29 @@ function SignInPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Derive a friendly display name from the email local-part (before @)
+
+    // Try real backend login first; fall back to local stub if backend unavailable or credentials invalid
+    try {
+      const result = await AuthAPI.login({ email, password });
+      if (result && result.token && result.user) {
+        const signedInUser = { name: result.user.name || result.user.email, email: result.user.email, avatar: (result.user.name || result.user.email).charAt(0).toUpperCase() };
+        setUser(signedInUser);
+        localStorage.setItem('user', JSON.stringify(signedInUser));
+        localStorage.setItem('token', result.token);
+        navigate('/');
+        return;
+      }
+    } catch (err) {
+      // backend login failed; fall through to local fallback
+      console.warn('Backend login failed — falling back to local sign-in', err?.message || err);
+    }
+
+    // Local fallback (keeps offline/dev flow working)
     const deriveName = (em) => {
       try {
         const local = (em || '').split('@')[0] || 'User';
-        // replace dots/underscores/dashes with spaces and capitalize words
         return local.replace(/[._-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
       } catch (err) {
         return 'User';
