@@ -27,7 +27,9 @@ export const FestivalsAPI = {
 		return request(`/festivals${q ? `?${q}` : ''}`);
 	},
 	get: (idOrSlug) => request(`/festivals/${idOrSlug}`),
-	create: (payload) => request('/festivals', { method: 'POST', body: JSON.stringify(payload) })
+	create: (payload) => request('/festivals', { method: 'POST', body: JSON.stringify(payload) }),
+	update: (id, payload) => request(`/festivals/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
+	delete: (id) => request(`/festivals/${id}`, { method: 'DELETE' })
 };
 
 export const FavoritesAPI = {

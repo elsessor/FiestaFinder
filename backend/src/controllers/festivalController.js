@@ -34,4 +34,27 @@ exports.create = async (req, res) => {
 	}
 };
 
+exports.update = async (req, res) => {
+	const id = req.params.id;
+	try {
+		const data = req.body;
+		const updated = await Festival.findByIdAndUpdate(id, data, { new: true });
+		if (!updated) return res.status(404).json({ message: 'Not found' });
+		return res.json(updated);
+	} catch (e) {
+		return res.status(400).json({ message: e.message || 'Invalid data' });
+	}
+};
+
+exports.remove = async (req, res) => {
+	const id = req.params.id;
+	try {
+		const deleted = await Festival.findByIdAndDelete(id);
+		if (!deleted) return res.status(404).json({ message: 'Not found' });
+		return res.json({ success: true });
+	} catch (e) {
+		return res.status(400).json({ message: e.message || 'Invalid request' });
+	}
+};
+
 

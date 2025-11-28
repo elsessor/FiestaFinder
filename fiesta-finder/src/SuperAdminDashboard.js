@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAdmin } from './AdminContext';
 import {
@@ -19,6 +19,8 @@ import {
 
 const SuperAdminDashboard = () => {
   const { festivals, deleteFestival, adminLogout, isAdminLoggedIn } = useAdmin();
+  const [remoteFestivals, setRemoteFestivals] = useState(null);
+  const [loadingRemote, setLoadingRemote] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -31,6 +33,25 @@ const SuperAdminDashboard = () => {
     return null;
   }
 
+  // fetch festivals from backend so user-submitted items are visible in admin dashboard
+  useEffect(() => {
+    let ignore = false;
+    const fetchRemote = async () => {
+      setLoadingRemote(true);
+      try {
+        const { FestivalsAPI } = await import('./api');
+        const data = await FestivalsAPI.list();
+        if (!ignore) setRemoteFestivals(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (!ignore) setRemoteFestivals([]);
+      } finally {
+        if (!ignore) setLoadingRemote(false);
+      }
+    };
+    fetchRemote();
+    return () => { ignore = true; };
+  }, []);
+
   const handleLogout = () => {
     adminLogout();
     navigate('/');
@@ -42,14 +63,34 @@ const SuperAdminDashboard = () => {
   };
 
   const confirmDelete = () => {
-    if (festivalToDelete) {
-      deleteFestival(festivalToDelete.id);
-      setShowDeleteModal(false);
-      setFestivalToDelete(null);
-    }
+    (async () => {
+      if (festivalToDelete) {
+        try {
+          await deleteFestival(festivalToDelete);
+        } catch (e) {
+          console.error('Failed to delete festival', e);
+        }
+        setShowDeleteModal(false);
+        setFestivalToDelete(null);
+      }
+    })();
   };
 
-  const filteredFestivals = festivals.filter(festival => {
+  // merge admin-managed festivals with backend festivals (de-duplicate by slug/_id/id/name)
+  const mergedFestivals = (() => {
+    const map = new Map();
+    const add = (f) => {
+      const key = f.slug || f._id || f.id || f.name;
+      if (!map.has(key)) map.set(key, f);
+    };
+    // admin/local festivals first
+    Array.isArray(festivals) && festivals.forEach(add);
+    // then backend/remote festivals
+    Array.isArray(remoteFestivals) && remoteFestivals.forEach(add);
+    return Array.from(map.values());
+  })();
+
+  const filteredFestivals = mergedFestivals.filter(festival => {
     const matchesSearch = festival.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          festival.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = filterCategory === 'all' || festival.category.toLowerCase() === filterCategory.toLowerCase();
@@ -57,11 +98,11 @@ const SuperAdminDashboard = () => {
   });
 
   const stats = {
-    total: festivals.length,
-    religious: festivals.filter(f => f.category === 'Religious').length,
-    cultural: festivals.filter(f => f.category === 'Cultural').length,
-    historical: festivals.filter(f => f.category === 'Historical').length,
-    nature: festivals.filter(f => f.category === 'Nature').length
+    total: mergedFestivals.length,
+    religious: mergedFestivals.filter(f => f.category === 'Religious').length,
+    cultural: mergedFestivals.filter(f => f.category === 'Cultural').length,
+    historical: mergedFestivals.filter(f => f.category === 'Historical').length,
+    nature: mergedFestivals.filter(f => f.category === 'Nature').length
   };
 
   return (
@@ -229,7 +270,7 @@ const SuperAdminDashboard = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredFestivals.map((festival) => (
-                  <tr key={festival.id} className="hover:bg-gray-50">
+                  <tr key={festival._id || festival.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="h-10 w-10 bg-gradient-to-br from-pink-500 to-orange-500 rounded-lg flex items-center justify-center mr-3">
@@ -237,7 +278,7 @@ const SuperAdminDashboard = () => {
                         </div>
                         <div>
                           <div className="text-sm font-medium text-gray-900">{festival.name}</div>
-                          <div className="text-sm text-gray-500">{festival.id}</div>
+                          <div className="text-sm text-gray-500">{festival._id || festival.id}</div>
                         </div>
                       </div>
                     </td>
@@ -278,14 +319,14 @@ const SuperAdminDashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
-                          onClick={() => navigate(`/festival/${festival.id}`)}
+                          onClick={() => navigate(`/festival/${festival._id || festival.id}`)}
                           className="text-blue-600 hover:text-blue-900 transition-colors p-1"
                           title="View Festival"
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => navigate(`/admin/edit-festival/${festival.id}`)}
+                          onClick={() => navigate(`/admin/edit-festival/${festival._id || festival.id}`)}
                           className="text-green-600 hover:text-green-900 transition-colors p-1"
                           title="Edit Festival"
                         >

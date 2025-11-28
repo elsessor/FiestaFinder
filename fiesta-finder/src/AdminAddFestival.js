@@ -93,8 +93,8 @@ const AdminAddFestival = () => {
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Add festival using admin context
-      const newFestival = addFestival(formData);
+      // Add festival using admin context (may call backend)
+      const newFestival = await addFestival(formData);
       console.log('Added festival:', newFestival);
 
       setSubmitted(true);

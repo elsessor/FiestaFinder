@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { festivals as initialFestivals } from './festival';
+import { FestivalsAPI } from './api';
 
 const AdminContext = createContext();
 
@@ -59,23 +60,57 @@ export const AdminProvider = ({ children }) => {
     localStorage.removeItem('adminSession');
   };
 
-  const addFestival = (festivalData) => {
-    const newFestival = {
+  const addFestival = async (festivalData) => {
+    // Normalize payload
+    const payload = {
       ...festivalData,
-      id: generateFestivalId(festivalData.name),
-      year: new Date().getFullYear(),
-      rating: 0,
       expectedAttendees: parseInt(festivalData.expectedAttendees) || 0,
-      imageUrls: Array.isArray(festivalData.imagePreviews) && festivalData.imagePreviews.length > 0
-        ? [...festivalData.imagePreviews]
-        : (festivalData.imagePreview ? [festivalData.imagePreview] : [])
+      imageUrl: Array.isArray(festivalData.imagePreviews) && festivalData.imagePreviews.length > 0
+        ? festivalData.imagePreviews[0]
+        : (festivalData.imagePreview || '')
     };
 
-    setFestivals(prev => [...prev, newFestival]);
-    return newFestival;
+    // Try backend create first
+    try {
+      const created = await FestivalsAPI.create(payload);
+      // ensure local admin state includes it
+      setFestivals(prev => [...prev, created]);
+      return created;
+    } catch (e) {
+      // fallback to local-only festival
+      const newFestival = {
+        ...payload,
+        id: generateFestivalId(payload.name || `festival-${Date.now()}`),
+        year: new Date().getFullYear(),
+        rating: 0
+      };
+      setFestivals(prev => [...prev, newFestival]);
+      return newFestival;
+    }
   };
 
-  const updateFestival = (festivalId, updatedData) => {
+  const updateFestival = async (festivalId, updatedData) => {
+    // If festivalId looks like a backend _id, attempt backend update
+    try {
+      const backendId = updatedData._id || updatedData.id || festivalId;
+      const payload = {
+        ...updatedData,
+        expectedAttendees: updatedData.expectedAttendees ? parseInt(updatedData.expectedAttendees) : undefined,
+        imageUrl: Array.isArray(updatedData.imagePreviews) && updatedData.imagePreviews.length > 0
+          ? updatedData.imagePreviews[0]
+          : (updatedData.imagePreview || updatedData.imageUrl)
+      };
+      // If backend id resembles Mongo _id (24 hex chars) or contains _id, attempt update
+      if (String(backendId).match(/^[0-9a-fA-F]{24}$/)) {
+        const updated = await FestivalsAPI.update(backendId, payload);
+        setFestivals(prev => prev.map(f => (f._id === backendId || f.id === backendId ? { ...f, ...updated } : f)));
+        return updated;
+      }
+    } catch (e) {
+      // ignore and fallback to local update
+    }
+
+    // local update fallback
     setFestivals(prev =>
       prev.map(festival =>
         festival.id === festivalId
@@ -92,14 +127,30 @@ export const AdminProvider = ({ children }) => {
           : festival
       )
     );
+    return null;
   };
 
-  const deleteFestival = (festivalId) => {
-    setFestivals(prev => prev.filter(festival => festival.id !== festivalId));
+  const deleteFestival = async (festivalIdOrObj) => {
+    // Accept either festival id or festival object
+    const id = typeof festivalIdOrObj === 'string' ? festivalIdOrObj : (festivalIdOrObj._id || festivalIdOrObj.id);
+
+    // If id is a backend _id try deleting remotely
+    try {
+      if (String(id).match(/^[0-9a-fA-F]{24}$/)) {
+        await FestivalsAPI.delete(id);
+        setFestivals(prev => prev.filter(f => f._id !== id && f.id !== id));
+        return true;
+      }
+    } catch (e) {
+      // ignore and fallback to local delete
+    }
+
+    setFestivals(prev => prev.filter(festival => festival.id !== id && festival._id !== id));
+    return true;
   };
 
   const getFestivalById = (id) => {
-    return festivals.find(festival => festival.id === id);
+    return festivals.find(festival => festival.id === id || festival._id === id || String(festival.id) === String(id));
   };
 
   // Helper function to generate festival ID from name

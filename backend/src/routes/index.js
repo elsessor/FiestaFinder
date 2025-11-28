@@ -23,6 +23,9 @@ router.get('/auth/me', auth, authController.me);
 router.get('/festivals', festivalController.list);
 router.get('/festivals/:id', festivalController.getById);
 router.post('/festivals', auth, festivalController.create);
+// Allow admin/frontend to update and delete festivals via API
+router.put('/festivals/:id', festivalController.update);
+router.delete('/festivals/:id', festivalController.remove);
 
 // Favorites
 router.get('/me/favorites', auth, favoriteController.getFavorites);

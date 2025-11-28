@@ -121,7 +121,7 @@ const AdminEditFestival = () => {
         updateData.expectedAttendees = parseInt(updateData.expectedAttendees);
       }
 
-      updateFestival(id, updateData);
+      await updateFestival(id, updateData);
 
       setUpdated(true);
       setLoading(false);
