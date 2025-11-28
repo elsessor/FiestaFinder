@@ -40,6 +40,11 @@ function App() {
     });
   };
 
+  const clearFavorites = () => {
+    setFavorites(new Set());
+    try { localStorage.removeItem('favorites'); } catch (e) {}
+  };
+
   // Load favorites and user from localStorage on app start
   React.useEffect(() => {
     const savedFavorites = localStorage.getItem('favorites');
@@ -55,7 +60,7 @@ function App() {
   return (
     <ToastProvider>
       <AuthContext.Provider value={{ user, setUser }}>
-        <FavoritesContext.Provider value={{ favorites, handleFavorite }}>
+        <FavoritesContext.Provider value={{ favorites, handleFavorite, clearFavorites }}>
           <Router>
             <div className="min-h-screen bg-white">
               <Header />

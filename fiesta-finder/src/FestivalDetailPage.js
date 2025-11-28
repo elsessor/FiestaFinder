@@ -1,18 +1,18 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { festivals as localFestivals } from './festival';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  Star, 
-  Heart, 
-  Share2, 
+import {
+  ArrowLeft,
+  MapPin,
+  Calendar,
+  Users,
+  Star,
+  Heart,
+  Share2,
   Clock,
   Info,
   Camera,
-  Navigation
+  Navigation,
 } from 'lucide-react';
 import { FestivalsAPI } from './api';
 
@@ -27,6 +27,8 @@ const FestivalDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [festival, setFestival] = useState(null);
+  const [destCoords, setDestCoords] = useState(null);
+  const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -35,13 +37,41 @@ const FestivalDetailPage = () => {
         const data = await FestivalsAPI.get(id);
         if (!ignore) setFestival(data);
       } catch (_) {
-        const fallback = localFestivals.find(f => f.id === id);
+        const fallback = localFestivals.find((f) => String(f.id) === String(id));
         if (!ignore) setFestival(fallback || null);
       }
     };
     load();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   }, [id]);
+
+  useEffect(() => {
+    let ignore = false;
+    const geocode = async () => {
+      if (!festival?.location) return;
+      setGeocoding(true);
+      try {
+        const q = encodeURIComponent(festival.location);
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`
+        );
+        const json = await res.json();
+        if (!ignore && Array.isArray(json) && json[0]) {
+          setDestCoords({ lat: Number(json[0].lat), lon: Number(json[0].lon) });
+        }
+      } catch (e) {
+        // silent
+      } finally {
+        setGeocoding(false);
+      }
+    };
+    geocode();
+    return () => {
+      ignore = true;
+    };
+  }, [festival]);
 
   if (!festival) {
     return (
@@ -56,13 +86,13 @@ const FestivalDetailPage = () => {
     );
   }
 
-  const categoryIcon = categoryIcons[festival.category];
+  const categoryIcon = categoryIcons[festival.category] || '🎉';
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-purple-200 via-blue-200 to-green-200 h-96">
-        <div className="absolute inset-0 bg-black bg-opacity-20"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-20" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center">
           <button
             onClick={() => navigate(-1)}
@@ -70,7 +100,7 @@ const FestivalDetailPage = () => {
           >
             <ArrowLeft className="w-5 h-5 text-gray-700" />
           </button>
-          
+
           <div className="text-center w-full animate-slide-up">
             <div className="text-8xl mb-4 animate-bounce-gentle">{categoryIcon}</div>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 gradient-text">
@@ -93,13 +123,13 @@ const FestivalDetailPage = () => {
                 <h3 className="font-semibold text-gray-900 mb-1">When</h3>
                 <p className="text-gray-600">{festival.month} {festival.year}</p>
               </div>
-              
+
               <div className="bg-white p-6 rounded-xl shadow-sm hover-lift hover-glow">
                 <Users className="w-8 h-8 text-blue-500 mb-3" />
                 <h3 className="font-semibold text-gray-900 mb-1">Expected Attendees</h3>
                 <p className="text-gray-600">{festival.expectedAttendees?.toLocaleString() || 'TBA'}</p>
               </div>
-              
+
               <div className="bg-white p-6 rounded-xl shadow-sm hover-lift hover-glow">
                 <Star className="w-8 h-8 text-yellow-500 mb-3" />
                 <h3 className="font-semibold text-gray-900 mb-1">Rating</h3>
@@ -113,11 +143,8 @@ const FestivalDetailPage = () => {
                 <Info className="w-6 h-6 mr-3 text-pink-500" />
                 About This Festival
               </h2>
-              <p className="text-gray-700 leading-relaxed text-lg mb-6">
-                {festival.description}
-              </p>
-              
-              {/* Category Badge */}
+              <p className="text-gray-700 leading-relaxed text-lg mb-6">{festival.description}</p>
+
               <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-pink-500 to-orange-500 text-white rounded-full">
                 <span className="mr-2">{categoryIcon}</span>
                 {festival.category} Festival
@@ -130,55 +157,101 @@ const FestivalDetailPage = () => {
                 <Camera className="w-6 h-6 mr-3 text-pink-500" />
                 Festival Activities
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {festival.category === 'Religious' && (
-                  <>
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <h4 className="font-semibold text-blue-900">Religious Processions</h4>
-                      <p className="text-blue-700 text-sm">Traditional religious ceremonies and parades</p>
-                    </div>
-                    <div className="p-4 bg-purple-50 rounded-lg">
-                      <h4 className="font-semibold text-purple-900">Prayer Services</h4>
-                      <p className="text-purple-700 text-sm">Special masses and devotional activities</p>
-                    </div>
-                  </>
+
+              <div className="space-y-4">
+                {festival.imageUrl && (
+                  <div className="mb-4">
+                    <img
+                      src={festival.imageUrl}
+                      alt={`${festival.name} image`}
+                      className="w-full rounded-lg object-cover max-h-64"
+                    />
+                  </div>
                 )}
-                {festival.category === 'Cultural' && (
-                  <>
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <h4 className="font-semibold text-green-900">Cultural Shows</h4>
-                      <p className="text-green-700 text-sm">Traditional dances and performances</p>
-                    </div>
-                    <div className="p-4 bg-yellow-50 rounded-lg">
-                      <h4 className="font-semibold text-yellow-900">Local Crafts</h4>
-                      <p className="text-yellow-700 text-sm">Handmade products and traditional arts</p>
-                    </div>
-                  </>
-                )}
-                {festival.category === 'Nature' && (
-                  <>
-                    <div className="p-4 bg-emerald-50 rounded-lg">
-                      <h4 className="font-semibold text-emerald-900">Outdoor Activities</h4>
-                      <p className="text-emerald-700 text-sm">Beach games and nature exploration</p>
-                    </div>
-                    <div className="p-4 bg-teal-50 rounded-lg">
-                      <h4 className="font-semibold text-teal-900">Local Cuisine</h4>
-                      <p className="text-teal-700 text sm">Fresh seafood and regional delicacies</p>
-                    </div>
-                  </>
-                )}
-                {festival.category === 'Historical' && (
-                  <>
-                    <div className="p-4 bg-amber-50 rounded-lg">
-                      <h4 className="font-semibold text-amber-900">Historical Reenactments</h4>
-                      <p className="text-amber-700 text-sm">Live performances of historical events</p>
-                    </div>
-                    <div className="p-4 bg-orange-50 rounded-lg">
-                      <h4 className="font-semibold text-orange-900">Cultural Education</h4>
-                      <p className="text-orange-700 text-sm">Learn about local history and heritage</p>
-                    </div>
-                  </>
-                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {festival.category === 'Religious' && (
+                    <>
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <h4 className="font-semibold text-blue-900">Religious Processions</h4>
+                        <p className="text-blue-700 text-sm">Traditional religious ceremonies and parades</p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <h4 className="font-semibold text-purple-900">Prayer Services</h4>
+                        <p className="text-purple-700 text-sm">Special masses and devotional activities</p>
+                      </div>
+                    </>
+                  )}
+
+                  {festival.category === 'Cultural' && (
+                    <>
+                      <div className="p-4 bg-green-50 rounded-lg flex items-center">
+                        {festival.imageUrl && (
+                          <img src={festival.imageUrl} alt="activity" className="w-16 h-16 object-cover rounded-md mr-4" />
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-green-900">Cultural Shows</h4>
+                          <p className="text-green-700 text-sm">Traditional dances and performances</p>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-yellow-50 rounded-lg flex items-center">
+                        {festival.imageUrl && (
+                          <img src={festival.imageUrl} alt="activity" className="w-16 h-16 object-cover rounded-md mr-4" />
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-yellow-900">Local Crafts</h4>
+                          <p className="text-yellow-700 text-sm">Handmade products and traditional arts</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {festival.category === 'Nature' && (
+                    <>
+                      <div className="p-4 bg-emerald-50 rounded-lg flex items-center">
+                        {festival.imageUrl && (
+                          <img src={festival.imageUrl} alt="activity" className="w-16 h-16 object-cover rounded-md mr-4" />
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-emerald-900">Outdoor Activities</h4>
+                          <p className="text-emerald-700 text-sm">Beach games and nature exploration</p>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-teal-50 rounded-lg flex items-center">
+                        {festival.imageUrl && (
+                          <img src={festival.imageUrl} alt="activity" className="w-16 h-16 object-cover rounded-md mr-4" />
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-teal-900">Local Cuisine</h4>
+                          <p className="text-teal-700 text-sm">Fresh seafood and regional delicacies</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {festival.category === 'Historical' && (
+                    <>
+                      <div className="p-4 bg-amber-50 rounded-lg flex items-center">
+                        {festival.imageUrl && (
+                          <img src={festival.imageUrl} alt="activity" className="w-16 h-16 object-cover rounded-md mr-4" />
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-amber-900">Historical Reenactments</h4>
+                          <p className="text-amber-700 text-sm">Live performances of historical events</p>
+                        </div>
+                      </div>
+                      <div className="p-4 bg-orange-50 rounded-lg flex items-center">
+                        {festival.imageUrl && (
+                          <img src={festival.imageUrl} alt="activity" className="w-16 h-16 object-cover rounded-md mr-4" />
+                        )}
+                        <div>
+                          <h4 className="font-semibold text-orange-900">Cultural Education</h4>
+                          <p className="text-orange-700 text-sm">Learn about local history and heritage</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -186,15 +259,43 @@ const FestivalDetailPage = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Location Card */}
-            <div className="bg-white p-6 rounded-xl shadow-sm hover-lift hover-glow animate-fade-in">
+              <div className="bg-white p-6 rounded-xl shadow-sm hover-lift hover-glow animate-fade-in">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <MapPin className="w-5 h-5 mr-2 text-pink-500" />
                 Location
               </h3>
               <p className="text-gray-700 mb-4">{festival.location}</p>
-              <button className="w-full bg-gradient-to-r from-pink-500 to-orange-500 text-white py-3 px-4 rounded-lg hover:from-pink-600 hover:to-orange-600 transition-all hover-scale flex items-center justify-center">
+              <button onClick={async () => {
+                // if we have destination coordinates, try to get user location
+                if (destCoords) {
+                  // try browser geolocation
+                  const openWithOrigin = (origin) => {
+                    const from = `${origin.lat},${origin.lon}`;
+                    const to = `${destCoords.lat},${destCoords.lon}`;
+                    const url = `https://www.openstreetmap.org/directions?engine=osrm_car&route=${from};${to}`;
+                    window.open(url, '_blank');
+                  };
+
+                  if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                      openWithOrigin({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+                    }, (err) => {
+                      // fallback: open search for destination
+                      const q = encodeURIComponent(festival.location);
+                      window.open(`https://www.openstreetmap.org/search?query=${q}`, '_blank');
+                    }, { timeout: 10000 });
+                  } else {
+                    const q = encodeURIComponent(festival.location);
+                    window.open(`https://www.openstreetmap.org/search?query=${q}`, '_blank');
+                  }
+                } else {
+                  // destination unknown: open search
+                  const q = encodeURIComponent(festival.location);
+                  window.open(`https://www.openstreetmap.org/search?query=${q}`, '_blank');
+                }
+              }} className="w-full bg-gradient-to-r from-pink-500 to-orange-500 text-white py-3 px-4 rounded-lg hover:from-pink-600 hover:to-orange-600 transition-all hover-scale flex items-center justify-center">
                 <Navigation className="w-4 h-4 mr-2" />
-                Get Directions
+                {geocoding ? 'Locating…' : 'Get Directions'}
               </button>
             </div>
 

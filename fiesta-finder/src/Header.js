@@ -8,7 +8,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, setUser } = useContext(AuthContext);
-  const { favorites } = useContext(FavoritesContext);
+  const { favorites, clearFavorites } = useContext(FavoritesContext);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -20,6 +20,7 @@ const Header = () => {
   const handleSignOut = () => {
     setUser(null);
     localStorage.removeItem('user');
+    try { if (clearFavorites) clearFavorites(); } catch (e) {}
     navigate('/');
   };
 

@@ -28,6 +28,7 @@ const AddFestivalPage = () => {
     website: '',
     image: null
   });
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   
@@ -49,10 +50,24 @@ const AddFestivalPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
+    if (files && files[0]) {
+      const file = files[0];
+      // basic size validation (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        try { toast({ type: 'error', message: 'Image must be under 10MB.' }); } catch(e){}
+        return;
+      }
+      setFormData(prev => ({ ...prev, [name]: file }));
+      // create preview
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+      if (name === 'image') {
+        setImagePreview(null);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -60,6 +75,17 @@ const AddFestivalPage = () => {
     setLoading(true);
 
     try {
+      // convert image file to data URL if present
+      const toDataUrl = (file) => new Promise((resolve, reject) => {
+        if (!file) return resolve(null);
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const imageDataUrl = await toDataUrl(formData.image);
+
       const payload = {
         name: formData.name,
         location: formData.location,
@@ -70,8 +96,9 @@ const AddFestivalPage = () => {
         contactEmail: formData.contactEmail || undefined,
         organizerName: formData.organizerName || undefined,
         website: formData.website || undefined,
-        imageUrl: null
+        imageUrl: imageDataUrl || null
       };
+
       const created = await FestivalsAPI.create(payload);
       setSubmitted(true);
       toast({ type: 'success', message: 'Festival submitted successfully!' });
@@ -334,19 +361,34 @@ const AddFestivalPage = () => {
                 Festival Image
               </h2>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-pink-500 transition-colors">
-                <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <label className="cursor-pointer">
-                  <span className="text-pink-600 hover:text-pink-700 font-medium">Upload an image</span>
-                  <span className="text-gray-500"> or drag and drop</span>
-                  <input
-                    type="file"
-                    name="image"
-                    onChange={handleInputChange}
-                    accept="image/*"
-                    className="sr-only"
-                  />
-                </label>
-                <p className="text-gray-400 text-sm mt-2">PNG, JPG, GIF up to 10MB</p>
+                {imagePreview ? (
+                  <div className="flex flex-col items-center">
+                    <img src={imagePreview} alt="Preview" className="max-w-xs max-h-48 object-cover rounded-md mb-4" />
+                    <div className="flex items-center space-x-3">
+                      <label className="cursor-pointer inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-sm">
+                        <span className="text-pink-600 font-medium">Change image</span>
+                        <input type="file" name="image" onChange={handleInputChange} accept="image/*" className="sr-only" />
+                      </label>
+                      <button type="button" onClick={() => { setFormData(prev => ({ ...prev, image: null })); setImagePreview(null); }} className="px-4 py-2 border border-gray-300 rounded-md text-sm">Remove</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <label className="cursor-pointer">
+                      <span className="text-pink-600 hover:text-pink-700 font-medium">Upload an image</span>
+                      <span className="text-gray-500"> or drag and drop</span>
+                      <input
+                        type="file"
+                        name="image"
+                        onChange={handleInputChange}
+                        accept="image/*"
+                        className="sr-only"
+                      />
+                    </label>
+                    <p className="text-gray-400 text-sm mt-2">PNG, JPG, GIF up to 10MB</p>
+                  </>
+                )}
               </div>
             </div>
 
