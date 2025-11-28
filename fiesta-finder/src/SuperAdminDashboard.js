@@ -27,14 +27,19 @@ const SuperAdminDashboard = () => {
   const [festivalToDelete, setFestivalToDelete] = useState(null);
   const navigate = useNavigate();
 
-  // Redirect if not admin
-  if (!isAdminLoggedIn) {
-    navigate('/admin/login');
-    return null;
-  }
+  // redirect to login if not admin (do navigation in effect to avoid conditional hook calls)
+  useEffect(() => {
+    if (!isAdminLoggedIn) {
+      navigate('/admin/login');
+    }
+  }, [isAdminLoggedIn, navigate]);
 
   // fetch festivals from backend so user-submitted items are visible in admin dashboard
   useEffect(() => {
+    if (!isAdminLoggedIn) {
+      setRemoteFestivals([]);
+      return;
+    }
     let ignore = false;
     const fetchRemote = async () => {
       setLoadingRemote(true);
@@ -50,7 +55,7 @@ const SuperAdminDashboard = () => {
     };
     fetchRemote();
     return () => { ignore = true; };
-  }, []);
+  }, [isAdminLoggedIn]);
 
   const handleLogout = () => {
     adminLogout();
